@@ -1,5 +1,8 @@
 package com.example.demo.controller;
 
+import com.example.demo.entity.User;
+import com.example.demo.repository.UserRepository;
+import com.example.demo.service.UserService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -17,4 +20,6 @@ public class DemoController {
     public String privateEndpoint() {
         return "This is a private endpoint. Authentication required.";
     }
+
+
 }

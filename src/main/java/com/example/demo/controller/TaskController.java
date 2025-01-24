@@ -2,12 +2,16 @@ package com.example.demo.controller;
 
 import com.example.demo.entity.ErrorResponse;
 import com.example.demo.entity.Task;
+import com.example.demo.entity.User;
 import com.example.demo.exceptions.TaskNotFoundException;
 import com.example.demo.service.TaskService;
+import com.example.demo.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,6 +25,9 @@ public class TaskController {
     @Autowired
     private TaskService taskService;
 
+    @Autowired
+    private UserService userService;
+
     @GetMapping
     public List<Task> getAllTasks() {
         return taskService.getAllTasks();
@@ -30,6 +37,9 @@ public class TaskController {
     public ResponseEntity<?> getTaskById(@PathVariable Long id) {
         Task task = taskService.getTaskById(id).orElseThrow(
                 () -> new TaskNotFoundException("Task not found with ID " + id));
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        User user = userService.findByUsername(auth.getName());
+        System.out.println(user.getRole().getName());
         return ResponseEntity.ok(task);
 
     }

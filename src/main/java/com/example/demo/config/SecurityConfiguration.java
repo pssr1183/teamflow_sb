@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.userdetails.User;
@@ -16,6 +17,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
+import java.util.HashSet;
+import java.util.Set;
+
+@EnableGlobalMethodSecurity(prePostEnabled = true)
 @Configuration
 public class SecurityConfiguration {
 
@@ -24,7 +29,7 @@ public class SecurityConfiguration {
         http
                 .csrf(csrf -> csrf.disable()) // Disable CSRF protection (not recommended for production)
                 .authorizeHttpRequests(authz -> authz
-                        .requestMatchers("/api/auth/register","/api/auth/login").permitAll()
+                        .requestMatchers("/api/auth/register","/api/auth/login","/api/auth/permissions").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers("/api/tasks/**").authenticated()
                         .anyRequest().authenticated()          // Require authentication for other endpoints
@@ -69,9 +74,16 @@ public class SecurityConfiguration {
         return username -> {
             com.example.demo.entity.User user = userService.findByUsername(username); // Find user from database
             if (user != null) {
+                Set<String> authoritiesSet = new HashSet<>();
+                authoritiesSet.add("ROLE_"+user.getRole().getName());
+                System.out.println(authoritiesSet.toString()+" "+username);
+                user.getRole().getPermissions().forEach(p -> authoritiesSet.add(p.getName()));
+//                System.out.println(authoritiesSet.toString());
                 return new org.springframework.security.core.userdetails.User(
                         user.getUsername(), user.getPassword(),
-                        AuthorityUtils.createAuthorityList("USER")
+                        AuthorityUtils.createAuthorityList(
+                                authoritiesSet.toArray(new String[0]) // Pass all authorities
+                        )
                 );
             }
             throw new UsernameNotFoundException("User not found");

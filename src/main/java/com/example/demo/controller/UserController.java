@@ -1,19 +1,23 @@
 package com.example.demo.controller;
 
+import com.example.demo.dto.UserRequest;
+import com.example.demo.entity.Permission;
+import com.example.demo.entity.Role;
 import com.example.demo.entity.User;
+import com.example.demo.repository.RoleRepository;
 import com.example.demo.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -22,17 +26,26 @@ public class UserController {
     private UserService userService;
 
     @Autowired
+    private RoleRepository roleRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Autowired
     private AuthenticationManager authenticationManager;
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody User user) {
-        if(userService.findByUsername(user.getUsername()) != null) {
+    public ResponseEntity<?> register(@RequestBody UserRequest userRequest) {
+        if(userService.findByUsername(userRequest.getUsername()) != null) {
             return ResponseEntity.badRequest().body("User is already present");
         }
-        userService.register(user.getUsername(),user.getPassword(),"USER_ROLE");
+        Role defaultRole = roleRepository.findRoleByName(userRequest.getRolename());
+        if (defaultRole == null) {
+            return ResponseEntity.badRequest().body("Default role not found in the database");
+        }
+
+        // Register the user with the default role
+        userService.register(userRequest.getUsername(), userRequest.getPassword(), defaultRole);
         return ResponseEntity.ok("User has been successfully Registered");
     }
 
@@ -58,6 +71,18 @@ public class UserController {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String username = auth.getName();
         String role = auth.getAuthorities().toString();
-        return ResponseEntity.ok("User has been successfully Logged In"+username+" "+role);
+        return ResponseEntity.ok("User has been successfully Logged In "+username+" with role "+role);
+    }
+
+    @PreAuthorize("hasRole('Member')")
+    @GetMapping("/permissions")
+    public ResponseEntity<?> getUserPermissions(){
+        String username = SecurityContextHolder.getContext().getAuthentication().getName().toString();
+        User user = userService.findByUsername(username);
+        Set<Permission> permissionSet = userService.userPermissions(username);
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+//        user.getRole().getPermissions().forEach(p -> System.out.println(p.getName()));
+//        auth.getAuthorities().forEach(authority -> System.out.println("Authority: " + authority.getAuthority()));
+        return ResponseEntity.ok(permissionSet);
     }
 }
