@@ -5,19 +5,19 @@ import com.example.demo.entity.Permission;
 import com.example.demo.entity.Role;
 import com.example.demo.entity.User;
 import com.example.demo.repository.RoleRepository;
+import com.example.demo.security.JWTUtil;
 import com.example.demo.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -29,10 +29,10 @@ public class UserController {
     private RoleRepository roleRepository;
 
     @Autowired
-    private PasswordEncoder passwordEncoder;
+    private JWTUtil jwtUtil;
 
     @Autowired
-    private AuthenticationManager authenticationManager;
+    private PasswordEncoder passwordEncoder;
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody UserRequest userRequest) {
@@ -59,30 +59,26 @@ public class UserController {
         if(!passwordEncoder.matches(user.getPassword(),existingUser.getPassword())) {
             return ResponseEntity.badRequest().body("Invalid credentials");
         }
-        UsernamePasswordAuthenticationToken authenticationToken =
-                new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword());
+        // Create a map to hold claims (you can add more claims as necessary)
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("username", existingUser.getUsername());
+        claims.put("role", "ROLE_"+existingUser.getRole().getName());
+        claims.put("permissions", existingUser.getRole().getPermissions().stream()
+                .map(Permission::getName)
+                .collect(Collectors.toList()));
 
-        // Authenticate the user using the AuthenticationManager
-        Authentication authentication = authenticationManager.authenticate(authenticationToken);
+        String token = jwtUtil.generateToken(existingUser.getUsername(), claims); // You can add more claims if needed
 
-        // If authentication is successful, set the authentication in the SecurityContext
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String username = auth.getName();
-        String role = auth.getAuthorities().toString();
-        return ResponseEntity.ok("User has been successfully Logged In "+username+" with role "+role);
+        return ResponseEntity.ok("User has been successfully Logged In. Token: " + token);
     }
 
-    @PreAuthorize("hasRole('Member')")
+    @PreAuthorize("hasRole('Member') or hasRole('Admin')")
     @GetMapping("/permissions")
     public ResponseEntity<?> getUserPermissions(){
         String username = SecurityContextHolder.getContext().getAuthentication().getName().toString();
         User user = userService.findByUsername(username);
         Set<Permission> permissionSet = userService.userPermissions(username);
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-//        user.getRole().getPermissions().forEach(p -> System.out.println(p.getName()));
-//        auth.getAuthorities().forEach(authority -> System.out.println("Authority: " + authority.getAuthority()));
         return ResponseEntity.ok(permissionSet);
     }
 }
