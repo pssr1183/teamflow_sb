@@ -4,7 +4,9 @@ import com.example.demo.dto.TaskDTO;
 import com.example.demo.dtomapper.DTOMapper;
 import com.example.demo.entity.Task;
 import com.example.demo.entity.User;
+import com.example.demo.exceptions.AccessDeniedException;
 import com.example.demo.exceptions.TaskNotFoundException;
+import com.example.demo.exceptions.UserNotFoundException;
 import com.example.demo.repository.TaskRepository;
 import com.example.demo.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +16,6 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
-import java.nio.file.AccessDeniedException;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -37,7 +38,7 @@ public class TaskService {
     public List<TaskDTO> getAllTasks(String username, String status, String priority) {
 
         User user = userRepository.findByUsername(username).orElseThrow(
-                ()-> new RuntimeException("User Not Found")
+                ()-> new UserNotFoundException("User Not Found")
         );
         List<Task> tasks;
         Boolean isAdmin = user.getRole() != null &&  user.getRole().getName().equalsIgnoreCase("Admin");
@@ -74,11 +75,7 @@ public class TaskService {
                 boolean isAssigned = task.getAssignments().stream()
                         .anyMatch(taskAssignment -> taskAssignment.getUser().getId().equals(currentUser.getId()));
                 if(!isAssigned) {
-                    try {
-                        throw new AccessDeniedException("You are not authorized to access this task.");
-                    } catch (AccessDeniedException e) {
-                        throw new RuntimeException(e);
-                    }
+                    throw new AccessDeniedException("You are not authorized to access this task.");
                 }
             }
         }
@@ -88,7 +85,7 @@ public class TaskService {
 
 
     @CacheEvict(value = "tasks", allEntries = true)
-    public Optional<Task> updateTask(Long Id, Task updatedTask) {
+    public Task updateTask(Long Id, Task updatedTask) {
         return taskRepository.findById(Id).map(task -> {
             task.setDeadline(updatedTask.getDeadline());
             task.setDescription(updatedTask.getDescription());
@@ -96,7 +93,9 @@ public class TaskService {
             task.setPriority(updatedTask.getPriority());
             task.setTitle(updatedTask.getTitle());
             return taskRepository.save(task);
-        });
+        }).orElseThrow(
+                ()-> new TaskNotFoundException("Task not found with ID " + Id)
+        );
     }
 
     @CacheEvict(value = "tasks", allEntries = true)
@@ -105,8 +104,8 @@ public class TaskService {
     }
 
     @CacheEvict(value = "tasks", allEntries = true)
-    public Optional<?> deleteTask(Long id) {
-       Optional<Task> task =  taskRepository.findById(id);
+    public Task deleteTask(Long id) {
+       Task task =  taskRepository.findById(id).orElseThrow(()-> new TaskNotFoundException("Task not found with ID " + id));
        taskRepository.deleteById(id);
        return task;
     }
