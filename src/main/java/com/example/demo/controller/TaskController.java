@@ -55,9 +55,7 @@ public class TaskController {
     @PreAuthorize("hasRole('Admin')")
     @PutMapping("/{id}")
     public ResponseEntity<Task> updateTask(@PathVariable Long id, @Validated @RequestBody Task task) {
-        Task updatedTask = taskService.updateTask(id, task).orElseThrow(
-                () -> new TaskNotFoundException("Task not found with ID " + id)
-        );
+        Task updatedTask = taskService.updateTask(id, task);
         return ResponseEntity.ok(updatedTask);
     }
 
@@ -70,7 +68,7 @@ public class TaskController {
     @PreAuthorize("hasRole('Admin')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTask(@PathVariable Long id) {
-        taskService.deleteTask(id).orElseThrow( () -> new TaskNotFoundException("Task not found with ID so cannot delete " + id));
+        taskService.deleteTask(id);
         return ResponseEntity.noContent().build();
     }
 }
