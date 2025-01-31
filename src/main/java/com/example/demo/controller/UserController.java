@@ -45,7 +45,7 @@ public class UserController {
         }
 
         // Register the user with the default role
-        userService.register(userRequest.getUsername(), userRequest.getPassword(), defaultRole);
+        userService.register(userRequest.getUsername(),userRequest.getDisplayName(), userRequest.getPassword(), defaultRole);
         return ResponseEntity.ok("User has been successfully Registered");
     }
 

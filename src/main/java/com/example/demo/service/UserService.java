@@ -21,10 +21,11 @@ public class UserService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    public User register(String username, String password, Role role)
+    public User register(String username, String displayName, String password, Role role)
     {
         User user = new User();
         user.setUsername(username);
+        user.setDisplayName(displayName);
         user.setPassword(passwordEncoder.encode(password));
         user.setRole(role);
         if (userRepository.existsByUsername(user.getUsername())) {
@@ -43,7 +44,6 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         Set<Permission> permissions = user.getRole().getPermissions();
-//        permissions.forEach(p -> System.out.println(p.getName()));
         return user.getRole().getPermissions();
 
     }
