@@ -9,6 +9,7 @@ import java.io.Serializable;
 import java.time.LocalDate;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Entity
 @Table(name = "tasks")
@@ -24,11 +25,12 @@ public class Task implements Serializable {
 
     private String description;
 
-    private String assignedUser;
-
     private LocalDate deadline;
 
     private String priority;
 
     private String status; // Example values: To Do, In Progress, Done
+
+    @OneToMany(mappedBy = "task")// One-to-many relationship with TaskAssignment
+    private List<TaskAssignment> assignments;
 }
