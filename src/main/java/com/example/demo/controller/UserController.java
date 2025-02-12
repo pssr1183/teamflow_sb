@@ -14,9 +14,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+
+import java.security.Principal;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -39,13 +39,25 @@ public class UserController {
         if(userService.findByUsername(userRequest.getUsername()) != null) {
             return ResponseEntity.badRequest().body("User is already present");
         }
-        Role defaultRole = roleRepository.findRoleByName(userRequest.getRolename());
-        if (defaultRole == null) {
-            return ResponseEntity.badRequest().body("Default role not found in the database");
+
+        Set<String> roles = userRequest.getRolenames();
+        Set<Role> defaultRoles = roleRepository.findByNameIn(roles);
+        // Identify missing roles
+        Set<String> foundRoleNames = defaultRoles.stream()
+                .map(Role::getName)
+                .collect(Collectors.toSet());
+
+        Set<String> missingRoles = roles.stream()
+                .filter(role -> !foundRoleNames.contains(role))
+                .collect(Collectors.toSet());
+
+// If any roles are missing, throw an error
+        if (!missingRoles.isEmpty()) {
+            return ResponseEntity.badRequest().body("The following roles are not found in the database: " + missingRoles);
         }
 
         // Register the user with the default role
-        userService.register(userRequest.getUsername(),userRequest.getDisplayName(), userRequest.getPassword(), defaultRole);
+        userService.register(userRequest.getUsername(),userRequest.getDisplayName(), userRequest.getPassword(), defaultRoles);
         return ResponseEntity.ok("User has been successfully Registered");
     }
 
@@ -62,23 +74,44 @@ public class UserController {
         // Create a map to hold claims (you can add more claims as necessary)
         Map<String, Object> claims = new HashMap<>();
         claims.put("username", existingUser.getUsername());
-        claims.put("role", "ROLE_"+existingUser.getRole().getName());
-        claims.put("permissions", existingUser.getRole().getPermissions().stream()
-                .map(Permission::getName)
+
+        claims.put("roles",existingUser.getRoles().stream()
+                .map(role -> "ROLE_"+role.getName())
                 .collect(Collectors.toList()));
+        claims.put("permissions", existingUser.getRoles()
+                .stream().flatMap(role -> role.getPermissions().stream())
+                .map(Permission::getName)
+                .collect(Collectors.toSet()));
 
         String token = jwtUtil.generateToken(existingUser.getUsername(), claims); // You can add more claims if needed
 
         return ResponseEntity.ok("User has been successfully Logged In. Token: " + token);
     }
 
-    @PreAuthorize("hasRole('Member') or hasRole('Admin')")
-    @GetMapping("/permissions")
-    public ResponseEntity<?> getUserPermissions(){
-        String username = SecurityContextHolder.getContext().getAuthentication().getName().toString();
-        User user = userService.findByUsername(username);
-        Set<Permission> permissionSet = userService.userPermissions(username);
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        return ResponseEntity.ok(permissionSet);
+//    @GetMapping("/permissions")
+//    public ResponseEntity<?> getUserPermissions(){
+//        String username = SecurityContextHolder.getContext().getAuthentication().getName().toString();
+//        User user = userService.findByUsername(username);
+//        Set<Permission> permissionSet = userService.userPermissions(username);
+//        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+//        return ResponseEntity.ok(permissionSet);
+//    }
+
+    @GetMapping("/fetch_roles")
+    public ResponseEntity<?> getUserRoles(Principal principal ){
+        User user = userService.findByUsername(principal.getName());
+        Set<?> roles = user.getRoles().stream().map(Role::getName).collect(Collectors.toSet());
+        Set<Role> roleSet = new HashSet<>();
+        roleSet.addAll(roleRepository.findAll());
+        roleSet.forEach(role -> {
+            System.out.println("Role: " + role.getName()); // Print Role Name
+            Set<Permission> permissions = role.getPermissions(); // Get Role Permissions
+
+            System.out.print("Permissions: ");
+            permissions.forEach(permission -> System.out.print(permission.getName() + ", ")); // Print all permissions
+            System.out.println(); // New line for clarity
+        });
+        return ResponseEntity.ok(roles);
     }
+
 }
