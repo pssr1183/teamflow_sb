@@ -2,6 +2,7 @@ package com.example.demo.service;
 
 import com.example.demo.dto.TaskDTO;
 import com.example.demo.dtomapper.DTOMapper;
+import com.example.demo.entity.Role;
 import com.example.demo.entity.Task;
 import com.example.demo.entity.User;
 import com.example.demo.exceptions.AccessDeniedException;
@@ -41,8 +42,8 @@ public class TaskService {
                 ()-> new UserNotFoundException("User Not Found")
         );
         List<Task> tasks;
-        Boolean isAdmin = user.getRole() != null &&  user.getRole().getName().equalsIgnoreCase("Admin");
-        if(!isAdmin) {
+        Boolean canViewAllTasks = !user.getRoles().isEmpty() &&  user.getRoles().stream().flatMap(role -> role.getPermissions().stream()).anyMatch(permission -> permission.getName().equalsIgnoreCase("TASK_VIEW_ALL"));
+        if(!canViewAllTasks) {
             tasks = taskRepository.findTasksByUserId(user.getId());
         } else {
             tasks = taskRepository.findAll();
@@ -66,11 +67,11 @@ public class TaskService {
 
     public TaskDTO getTaskById(Long Id, User currentUser) {
 
-        Boolean isAdmin = currentUser.getRole() != null &&  currentUser.getRole().getName().equalsIgnoreCase("Admin");
+        Boolean canViewAllTasks = !currentUser.getRoles().isEmpty() &&  currentUser.getRoles().stream().flatMap(role -> role.getPermissions().stream()).anyMatch(permission -> permission.getName().equalsIgnoreCase("TASK_VIEW_ALL"));
         Task task = taskRepository.findById(Id).orElseThrow(
                 ()-> new TaskNotFoundException("Task not found with ID " + Id)
         );
-        if(!isAdmin) {
+        if(!canViewAllTasks) {
             if(task.getAssignments() != null) {
                 boolean isAssigned = task.getAssignments().stream()
                         .anyMatch(taskAssignment -> taskAssignment.getUser().getId().equals(currentUser.getId()));
@@ -80,7 +81,7 @@ public class TaskService {
             }
         }
 
-        return dtoMapper.mapToTaskDTO(task,isAdmin,true);
+        return dtoMapper.mapToTaskDTO(task,canViewAllTasks,true);
     }
 
 

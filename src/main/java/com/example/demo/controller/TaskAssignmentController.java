@@ -28,7 +28,7 @@ public class TaskAssignmentController {
     @Autowired
     private DTOMapper dtoMapper;
 
-    @PreAuthorize("hasRole('Admin')")
+    @PreAuthorize("hasAuthority('TASK_ASSIGN')")
     @PostMapping("/assign")
     public ResponseEntity<String> assignUserToTask(@PathVariable Long taskId, @RequestBody TaskAssignmentDTO taskAssignmentDTO) {
 
@@ -42,14 +42,14 @@ public class TaskAssignmentController {
 
         return ResponseEntity.status(HttpStatus.OK).body("Task successfully assigned to user");
     }
-
+    @PreAuthorize("hasAuthority('TASK_ASSIGN')")
     @GetMapping
     public List<TaskAssignmentDTO> getAssignmentsForTask(@PathVariable Long taskId) {
         List<TaskAssignment> taskAssignments = taskAssignmentService.getAssignmentsForTask(taskId);
         return dtoMapper.mapToTaskAssignmentDTOList(taskAssignments);
     }
 
-    @PreAuthorize("hasRole('Admin')")
+    @PreAuthorize("hasAuthority('TASK_UPDATE_OWN')")
     @PutMapping("/{assignmentId}")
     public ResponseEntity<?> updateAssignmentStatus(@PathVariable Long assignmentId, @RequestBody Map<String, String> payload) {
         String status = payload.get("status");
@@ -61,7 +61,7 @@ public class TaskAssignmentController {
         return ResponseEntity.status(HttpStatus.OK).body(taskAssignmentDTO);
     }
 
-    @PreAuthorize("hasRole('Admin')")
+    @PreAuthorize("hasAuthority('TASK_ASSIGN')")
     @DeleteMapping("/{assignmentId}")
     public ResponseEntity<?> deleteAssignmentStatus(@PathVariable Long assignmentId) {
         taskAssignmentService.unassignUserFromTask(assignmentId);

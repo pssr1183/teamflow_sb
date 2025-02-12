@@ -52,20 +52,20 @@ public class TaskController {
         return ResponseEntity.ok(taskDTO);
     }
 
-    @PreAuthorize("hasRole('Admin')")
+    @PreAuthorize("hasAuthority('TASK_UPDATE')")
     @PutMapping("/{id}")
     public ResponseEntity<Task> updateTask(@PathVariable Long id, @Validated @RequestBody Task task) {
         Task updatedTask = taskService.updateTask(id, task);
         return ResponseEntity.ok(updatedTask);
     }
 
-    @PreAuthorize("hasRole('Admin')")
+    @PreAuthorize("hasAuthority('TASK_CREATE')")
     @PostMapping
     public Task createTask(@Validated @RequestBody Task task) {
         return taskService.createTask(task);
     }
 
-    @PreAuthorize("hasRole('Admin')")
+    @PreAuthorize("hasAuthority('TASK_DELETE')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTask(@PathVariable Long id) {
         taskService.deleteTask(id);

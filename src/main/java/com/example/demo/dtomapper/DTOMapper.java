@@ -3,6 +3,7 @@ package com.example.demo.dtomapper;
 import com.example.demo.dto.TaskAssignmentDTO;
 import com.example.demo.dto.TaskDTO;
 import com.example.demo.dto.UserDTO;
+import com.example.demo.entity.Role;
 import com.example.demo.entity.Task;
 import com.example.demo.entity.TaskAssignment;
 import com.example.demo.entity.User;
@@ -36,7 +37,7 @@ public class DTOMapper {
                             UserDTO userDTO = new UserDTO();
                             userDTO.setId(user.getId());
                             userDTO.setUsername(user.getUsername());
-                            userDTO.setRolename(user.getRole() != null ? user.getRole().getName() : null);
+                            userDTO.setRolenames(user.getRoles() != null ? user.getRoles().stream().map(Role::getName).collect(Collectors.toSet()) : null);
                             taskAssignmentDTO.setUser(userDTO);
                         }
                     }
@@ -65,7 +66,7 @@ public class DTOMapper {
         UserDTO userDTO = new UserDTO();
         userDTO.setId(user.getId());
         userDTO.setUsername(user.getUsername());
-        userDTO.setRolename(user.getRole() != null ? user.getRole().getName() : null);
+        userDTO.setRolenames(user.getRoles() != null ? user.getRoles().stream().map(Role::getName).collect(Collectors.toSet()) : null);
 
         TaskAssignmentDTO taskAssignmentDTO = new TaskAssignmentDTO();
         taskAssignmentDTO.setId(taskAssignment.getId());
