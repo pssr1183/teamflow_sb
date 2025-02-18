@@ -7,10 +7,7 @@ import com.example.demo.service.RoleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/roles")
@@ -24,18 +21,25 @@ public class RoleController {
 
     @PostMapping("/add-permissions")
     public ResponseEntity<?> addPermissions(@RequestBody RolePermissionDTO rolePermissionDTO) {
-        Set<String> requestedPermissions = rolePermissionDTO.getPermissions();
-        List<Permission> allPermissions = permissionRepository.findAll();
-        Set<String> existingPermissionNames = allPermissions.stream().map(Permission::getName).collect(Collectors.toSet());
-        Set<String> missingPermissions = requestedPermissions.stream().filter(permission -> !existingPermissionNames.contains(permission)).collect(Collectors.toSet());
+        Set<Permission> permissionSet = roleService.setPermissions(rolePermissionDTO);
+        return ResponseEntity.ok(permissionSet);
+    }
 
-        if(!missingPermissions.isEmpty()) {
-            return ResponseEntity.badRequest().body("The following roles are not found in the database: "+missingPermissions);
-        }
-        Set<Permission> validPermissions = permissionRepository.findByNameIn(requestedPermissions);
+    @PutMapping("/update-permissions")
+    public ResponseEntity<?> updatePermissions(@RequestBody RolePermissionDTO rolePermissionDTO) {
+        Set<Permission> permissionSet = roleService.updatePermissions(rolePermissionDTO);
+        return ResponseEntity.ok(permissionSet);
+    }
 
-        Set<Permission> permissionSet = roleService.setPermissions(rolePermissionDTO.getRoleName(),validPermissions);
+    @DeleteMapping("/delete-permissions")
+    public ResponseEntity<?> deletePermissions(@RequestBody RolePermissionDTO rolePermissionDTO) {
+        Set<Permission> permissionSet = roleService.deletePermissions(rolePermissionDTO);
+        return ResponseEntity.ok(permissionSet);
+    }
 
+    @GetMapping("/get-permissions")
+    public ResponseEntity<?> getPermissions(@RequestBody RolePermissionDTO rolePermissionDTO) {
+        Set<Permission> permissionSet = roleService.getPermissions(rolePermissionDTO.getRoleName());
         return ResponseEntity.ok(permissionSet);
     }
 }

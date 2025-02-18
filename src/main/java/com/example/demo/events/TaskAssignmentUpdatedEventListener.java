@@ -6,6 +6,7 @@ import com.example.demo.repository.TaskAssignmentRepository;
 import com.example.demo.repository.TaskRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
@@ -19,6 +20,7 @@ public class TaskAssignmentUpdatedEventListener {
 
     @Transactional
     @EventListener
+    @CacheEvict(value = "tasks", allEntries = true)
     public void handleTaskAssignmentUpdated(TaskAssignmentUpdatedEvent event) {
         TaskAssignment taskAssignment = taskAssignmentRepository.findById(event.getAssignmentId()).orElseThrow(
                 ()-> new RuntimeException("No corresponding task assignment found")

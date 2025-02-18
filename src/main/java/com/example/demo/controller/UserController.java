@@ -36,6 +36,7 @@ public class UserController {
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody UserRequest userRequest) {
+
         if(userService.findByUsername(userRequest.getUsername()) != null) {
             return ResponseEntity.badRequest().body("User is already present");
         }
@@ -51,7 +52,7 @@ public class UserController {
                 .filter(role -> !foundRoleNames.contains(role))
                 .collect(Collectors.toSet());
 
-// If any roles are missing, throw an error
+        // If any roles are missing, throw an error
         if (!missingRoles.isEmpty()) {
             return ResponseEntity.badRequest().body("The following roles are not found in the database: " + missingRoles);
         }
@@ -88,6 +89,28 @@ public class UserController {
         return ResponseEntity.ok("User has been successfully Logged In. Token: " + token);
     }
 
+    @GetMapping("/get_allusers")
+    public ResponseEntity<?> getAllUsers() {
+        return ResponseEntity.ok(userService.findAllUsers());
+    }
+
+    @GetMapping("/fetch_roles")
+    public ResponseEntity<?> getUserRoles(){
+
+        Map<String, Set<String>> rolePermissionsMap = userService.getUserRoles();
+
+        return ResponseEntity.ok(rolePermissionsMap);
+    }
+
+    @GetMapping("/fetch_current_user_roles")
+    public ResponseEntity<?> getCurrentUserRoles(Principal principal ){
+        User user = userService.findByUsername(principal.getName());
+
+        Map<String, Set<String>> rolePermissionsMap = userService.getCurrentUserRoles(user);
+
+        return ResponseEntity.ok(rolePermissionsMap);
+    }
+
 //    @GetMapping("/permissions")
 //    public ResponseEntity<?> getUserPermissions(){
 //        String username = SecurityContextHolder.getContext().getAuthentication().getName().toString();
@@ -96,22 +119,5 @@ public class UserController {
 //        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 //        return ResponseEntity.ok(permissionSet);
 //    }
-
-    @GetMapping("/fetch_roles")
-    public ResponseEntity<?> getUserRoles(Principal principal ){
-        User user = userService.findByUsername(principal.getName());
-        Set<?> roles = user.getRoles().stream().map(Role::getName).collect(Collectors.toSet());
-        Set<Role> roleSet = new HashSet<>();
-        roleSet.addAll(roleRepository.findAll());
-        roleSet.forEach(role -> {
-            System.out.println("Role: " + role.getName()); // Print Role Name
-            Set<Permission> permissions = role.getPermissions(); // Get Role Permissions
-
-            System.out.print("Permissions: ");
-            permissions.forEach(permission -> System.out.print(permission.getName() + ", ")); // Print all permissions
-            System.out.println(); // New line for clarity
-        });
-        return ResponseEntity.ok(roles);
-    }
 
 }

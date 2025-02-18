@@ -42,12 +42,17 @@ public class TaskService {
                 ()-> new UserNotFoundException("User Not Found")
         );
         List<Task> tasks;
-        Boolean canViewAllTasks = !user.getRoles().isEmpty() &&  user.getRoles().stream().flatMap(role -> role.getPermissions().stream()).anyMatch(permission -> permission.getName().equalsIgnoreCase("TASK_VIEW_ALL"));
+        Boolean canViewAllTasks = !user.getRoles().isEmpty()
+                &&  user.getRoles().stream()
+                .flatMap(role -> role.getPermissions().stream())
+                .anyMatch(permission -> permission.getName().equalsIgnoreCase("TASK_VIEW_ALL"));
+
         if(!canViewAllTasks) {
             tasks = taskRepository.findTasksByUserId(user.getId());
         } else {
             tasks = taskRepository.findAll();
         }
+
         if(status != null) {
            tasks = tasks.stream()
                     .filter(task -> task.getStatus().equalsIgnoreCase(status))
@@ -59,7 +64,7 @@ public class TaskService {
                     .filter(task -> task.getPriority().equalsIgnoreCase(priority))
                     .collect(Collectors.toList());
         }
-        List<TaskDTO> taskDTOS = dtoMapper.mapToDTOList(tasks);
+        List<TaskDTO> taskDTOS = dtoMapper.mapToDTOList(tasks,canViewAllTasks,user);
 
         return taskDTOS;
     }
@@ -71,22 +76,27 @@ public class TaskService {
         Task task = taskRepository.findById(Id).orElseThrow(
                 ()-> new TaskNotFoundException("Task not found with ID " + Id)
         );
+
         if(!canViewAllTasks) {
-            if(task.getAssignments() != null) {
-                boolean isAssigned = task.getAssignments().stream()
-                        .anyMatch(taskAssignment -> taskAssignment.getUser().getId().equals(currentUser.getId()));
-                if(!isAssigned) {
-                    throw new AccessDeniedException("You are not authorized to access this task.");
-                }
+
+            if(task.getAssignments().isEmpty()) {
+                throw new AccessDeniedException("Task is not assigned to anyone");
+            }
+
+            boolean isAssigned = task.getAssignments().stream()
+                    .anyMatch(taskAssignment -> taskAssignment.getUser().getId().equals(currentUser.getId()));
+            if(!isAssigned) {
+                throw new AccessDeniedException("You are not authorized to access this task.");
             }
         }
 
-        return dtoMapper.mapToTaskDTO(task,canViewAllTasks,true);
+        return dtoMapper.mapToTaskDTO(task,canViewAllTasks,true,currentUser);
     }
 
 
     @CacheEvict(value = "tasks", allEntries = true)
     public Task updateTask(Long Id, Task updatedTask) {
+
         return taskRepository.findById(Id).map(task -> {
             task.setDeadline(updatedTask.getDeadline());
             task.setDescription(updatedTask.getDescription());
@@ -101,13 +111,16 @@ public class TaskService {
 
     @CacheEvict(value = "tasks", allEntries = true)
     public Task createTask(Task task) {
+
         return taskRepository.save(task);
     }
 
     @CacheEvict(value = "tasks", allEntries = true)
     public Task deleteTask(Long id) {
+
        Task task =  taskRepository.findById(id).orElseThrow(()-> new TaskNotFoundException("Task not found with ID " + id));
        taskRepository.deleteById(id);
+
        return task;
     }
 

@@ -8,14 +8,14 @@ import com.example.demo.entity.Task;
 import com.example.demo.entity.TaskAssignment;
 import com.example.demo.entity.User;
 import org.springframework.stereotype.Component;
-
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Component
+
 public class DTOMapper {
 
-    public TaskDTO mapToTaskDTO(Task task, boolean isAdmin, boolean isSingleTask) {
+    public TaskDTO mapToTaskDTO(Task task, boolean canViewAll, boolean isSingleTask, User currentUser) {
         TaskDTO taskDTO = new TaskDTO();
         taskDTO.setId(task.getId());
         taskDTO.setTitle(task.getTitle());
@@ -27,10 +27,10 @@ public class DTOMapper {
         // Map assignments to DTOs
         List<TaskAssignmentDTO> assignmentDTOS = task.getAssignments()
                 .stream()
+                .filter(assignment -> canViewAll || (assignment.getUser() != null && assignment.getUser().getId().equals(currentUser.getId())))
                 .map(assignment -> {
                     TaskAssignmentDTO taskAssignmentDTO = new TaskAssignmentDTO();
-                    System.out.println(isAdmin && !isSingleTask);
-                    if(isAdmin && !isSingleTask) {
+                    if(canViewAll && !isSingleTask) {
 
                         User user = assignment.getUser();
                         if(user != null) {
@@ -54,9 +54,9 @@ public class DTOMapper {
         return taskDTO;
     }
 
-    public List<TaskDTO> mapToDTOList(List<Task> tasks) {
+    public List<TaskDTO> mapToDTOList(List<Task> tasks, boolean canViewAllTasks, User user) {
         return tasks.stream()
-                .map(task -> mapToTaskDTO(task,true,false))
+                .map(task -> mapToTaskDTO(task,canViewAllTasks,false, user))
                 .collect(Collectors.toList());
     }
 
