@@ -1,13 +1,15 @@
 package com.example.demo.controller;
 
+import com.example.demo.dto.requests.TaskAssignmentCreationRequest;
 import com.example.demo.dto.TaskAssignmentDTO;
-import com.example.demo.dto.TaskAssignmentRequest;
+import com.example.demo.dto.requests.TaskAssignmentStatusUpdationRequest;
 import com.example.demo.dtomapper.DTOMapper;
 import com.example.demo.entity.TaskAssignment;
 import com.example.demo.entity.User;
 import com.example.demo.events.TaskAssignmentUpdatedEvent;
 import com.example.demo.service.TaskAssignmentService;
 import com.example.demo.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
@@ -35,7 +37,7 @@ public class TaskAssignmentController {
 
     @PreAuthorize("hasAuthority('TASK_ASSIGN')")
     @PostMapping("/assign")
-    public ResponseEntity<String> assignUserToTask(@PathVariable Long taskId, @RequestBody TaskAssignmentRequest taskAssignmentRequest) {
+    public ResponseEntity<String> assignUserToTask(@PathVariable Long taskId,  @Valid @RequestBody TaskAssignmentCreationRequest taskAssignmentRequest) {
 
         taskAssignmentService.assignUserToTask(
                 taskId,
@@ -57,7 +59,7 @@ public class TaskAssignmentController {
 
     @PreAuthorize("hasAuthority('TASK_UPDATE_OWN') or hasAuthority('TASK_UPDATE_ALL')")
     @PutMapping("/{assignmentId}")
-    public ResponseEntity<?> updateAssignmentStatus(@PathVariable Long assignmentId, @RequestBody TaskAssignmentRequest taskAssignmentRequest, Principal principal) {
+    public ResponseEntity<?> updateAssignmentStatus(@PathVariable Long assignmentId, @Valid @RequestBody TaskAssignmentStatusUpdationRequest taskAssignmentRequest, Principal principal) {
 
         String status = taskAssignmentRequest.getStatus();
         User currentUser = userService.findByUsername(principal.getName());

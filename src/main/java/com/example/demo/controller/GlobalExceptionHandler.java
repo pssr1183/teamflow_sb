@@ -6,12 +6,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
@@ -75,14 +78,27 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.REQUEST_TIMEOUT,e.getMessage(),request);
     }
 
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiResponse> handleMethodArgumentNotValidException(MethodArgumentNotValidException e, HttpServletRequest request) {
+        Map<String, String> errors = new HashMap<>();
+
+        e.getBindingResult().getFieldErrors().forEach(fieldError -> errors.put(fieldError.getField(),fieldError.getDefaultMessage()));
+        return buildErrorResponse(HttpStatus.BAD_REQUEST,"Some of the fields are missing",request,errors);
+    }
+
 
     private ResponseEntity<ApiResponse> buildErrorResponse(HttpStatus status, String message,HttpServletRequest request) {
+        return buildErrorResponse(status,message,request,null);
+    }
+
+    private ResponseEntity<ApiResponse> buildErrorResponse(HttpStatus status, String message,HttpServletRequest request,Map<String,String> fieldErrors) {
         ApiResponse errorResponse = new ApiResponse(
-               LocalDateTime.now(),
+                LocalDateTime.now(),
                 status.value(),
                 status.getReasonPhrase(),
                 message,
-                request.getRequestURI()
+                request.getRequestURI(),
+                fieldErrors
         );
 
         return new ResponseEntity<>(errorResponse, status);

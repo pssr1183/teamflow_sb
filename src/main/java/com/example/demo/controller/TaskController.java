@@ -1,16 +1,17 @@
 package com.example.demo.controller;
 
 import com.example.demo.dto.TaskDTO;
+import com.example.demo.dto.requests.TaskRequest;
 import com.example.demo.dtomapper.DTOMapper;
 import com.example.demo.entity.Task;
 import com.example.demo.entity.User;
 import com.example.demo.service.TaskService;
 import com.example.demo.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import java.security.Principal;
 import java.util.List;
@@ -50,18 +51,18 @@ public class TaskController {
 
     @PreAuthorize("hasAuthority('TASK_UPDATE')")
     @PutMapping("/{id}")
-    public ResponseEntity<Task> updateTask(@PathVariable Long id, @Validated @RequestBody Task task) {
+    public ResponseEntity<Task> updateTask(@PathVariable Long id, @Valid @RequestBody TaskRequest taskRequest) {
 
-        Task updatedTask = taskService.updateTask(id, task);
+        Task updatedTask = taskService.updateTask(id, taskRequest);
 
         return ResponseEntity.ok(updatedTask);
     }
 
     @PreAuthorize("hasAuthority('TASK_CREATE')")
     @PostMapping
-    public Task createTask(@Validated @RequestBody Task task) {
+    public Task createTask(@Valid @RequestBody TaskRequest taskRequest) {
 
-        return taskService.createTask(task);
+        return taskService.createTask(taskRequest);
     }
 
     @PreAuthorize("hasAuthority('TASK_DELETE')")
