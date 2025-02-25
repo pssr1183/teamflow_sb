@@ -1,4 +1,4 @@
-package com.example.demo.dto;
+package com.example.demo.dto.requests;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -7,9 +7,7 @@ import java.util.Set;
 
 @Setter
 @Getter
-public class UserRequest {
-    private String username;
+public class UserRegistrationRequest extends UserRequest {
     private String displayName;
-    private String password;
     private Set<String> rolenames;
 }

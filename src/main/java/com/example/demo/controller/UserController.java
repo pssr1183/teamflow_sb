@@ -1,17 +1,17 @@
 package com.example.demo.controller;
 
-import com.example.demo.dto.UserRequest;
+import com.example.demo.dto.requests.UserLoginRequest;
+import com.example.demo.dto.requests.UserRegistrationRequest;
+import com.example.demo.dto.requests.UserRolesUpdateRequest;
 import com.example.demo.entity.Permission;
 import com.example.demo.entity.Role;
 import com.example.demo.entity.User;
-import com.example.demo.repository.RoleRepository;
 import com.example.demo.security.JWTUtil;
+import com.example.demo.service.RoleService;
 import com.example.demo.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,7 +26,7 @@ public class UserController {
     private UserService userService;
 
     @Autowired
-    private RoleRepository roleRepository;
+    private RoleService roleService;
 
     @Autowired
     private JWTUtil jwtUtil;
@@ -35,41 +35,41 @@ public class UserController {
     private PasswordEncoder passwordEncoder;
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody UserRequest userRequest) {
+    public ResponseEntity<?> register(@Valid @RequestBody UserRegistrationRequest userRequest) {
 
         if(userService.findByUsername(userRequest.getUsername()) != null) {
             return ResponseEntity.badRequest().body("User is already present");
         }
 
-        Set<String> roles = userRequest.getRolenames();
-        Set<Role> defaultRoles = roleRepository.findByNameIn(roles);
-        // Identify missing roles
-        Set<String> foundRoleNames = defaultRoles.stream()
-                .map(Role::getName)
-                .collect(Collectors.toSet());
+        Set<String> roles = userRequest.getRolenames() != null && !userRequest.getRolenames().isEmpty() ? userRequest.getRolenames():
+                Collections.singleton("User");
 
-        Set<String> missingRoles = roles.stream()
-                .filter(role -> !foundRoleNames.contains(role))
-                .collect(Collectors.toSet());
-
-        // If any roles are missing, throw an error
-        if (!missingRoles.isEmpty()) {
-            return ResponseEntity.badRequest().body("The following roles are not found in the database: " + missingRoles);
-        }
+        Set<Role> defaultRoles = roleService.validRoles(roles);
 
         // Register the user with the default role
         userService.register(userRequest.getUsername(),userRequest.getDisplayName(), userRequest.getPassword(), defaultRoles);
         return ResponseEntity.ok("User has been successfully Registered");
     }
 
+    @PatchMapping("/users/{userId}/roles")
+    public ResponseEntity<?> updateRoles(@Valid @RequestBody UserRolesUpdateRequest dto, @PathVariable Long userId) {
+        User user = userService.findUserById(userId);
+        Set<String> roles = dto.getRolenames();
+
+        Set<Role> vaildRoles = roleService.validRoles(roles);
+        userService.updateRoles(user,vaildRoles);
+        return ResponseEntity.ok("User roles are updated successfully");
+    }
+
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody User user) {
-        User existingUser = userService.findByUsername(user.getUsername());
+    public ResponseEntity<?> login(@Valid @RequestBody UserLoginRequest userLoginRequest) {
+        User existingUser = userService.findByUsername(userLoginRequest.getUsername());
+
         if(existingUser == null) {
             return ResponseEntity.badRequest().body("User should register");
         }
 
-        if(!passwordEncoder.matches(user.getPassword(),existingUser.getPassword())) {
+        if(!passwordEncoder.matches(userLoginRequest.getPassword(),existingUser.getPassword())) {
             return ResponseEntity.badRequest().body("Invalid credentials");
         }
         // Create a map to hold claims (you can add more claims as necessary)

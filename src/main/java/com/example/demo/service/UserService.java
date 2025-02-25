@@ -4,6 +4,7 @@ import com.example.demo.entity.Permission;
 import com.example.demo.entity.Role;
 import com.example.demo.entity.User;
 import com.example.demo.exceptions.UserAlreadyExistsException;
+import com.example.demo.exceptions.UserNotFoundException;
 import com.example.demo.repository.RoleRepository;
 import com.example.demo.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,12 +46,20 @@ public class UserService {
         return userRepository.findByUsername(username).orElse(null);
     }
 
-    public Map<String,Set<String >> findAllUsers() {
+    public User findUserById(Long userId) {
+        return userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException("User not found with ID: "+userId));
+    }
+
+    public Map<Long, Map<String, Object >> findAllUsers() {
 
         List<User> users = userRepository.findAll();
-        Map<String,Set<String >> usersMap = users.stream().collect(Collectors.toMap(
-                User::getUsername,
-                user -> user.getRoles().stream().map(Role::getName).collect(Collectors.toSet())
+        Map<Long, Map<String, Object >> usersMap = users.stream().collect(Collectors.toMap(
+                User::getId,
+                user ->
+                    Map.of(
+                            "username",user.getUsername(),
+                            "roles", user.getRoles().stream().map(Role::getName).collect(Collectors.toSet())
+                    )
         ));
 
         return usersMap;
@@ -92,5 +101,11 @@ public class UserService {
     public boolean canPerformAny(User currentUser, String currentPermission) {
 
        return currentUser.getRoles().isEmpty() &&  currentUser.getRoles().stream().flatMap(role -> role.getPermissions().stream()).anyMatch(permission -> permission.getName().equalsIgnoreCase(currentPermission));
+    }
+
+    public User updateRoles(User user, Set<Role> vaildRoles) {
+        user.setRoles(vaildRoles);
+        userRepository.save(user);
+        return user;
     }
 }

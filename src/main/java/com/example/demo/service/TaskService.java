@@ -1,6 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.dto.TaskDTO;
+import com.example.demo.dto.requests.TaskRequest;
 import com.example.demo.dtomapper.DTOMapper;
 import com.example.demo.entity.Role;
 import com.example.demo.entity.Task;
@@ -95,7 +96,7 @@ public class TaskService {
 
 
     @CacheEvict(value = "tasks", allEntries = true)
-    public Task updateTask(Long Id, Task updatedTask) {
+    public Task updateTask(Long Id, TaskRequest updatedTask) {
 
         return taskRepository.findById(Id).map(task -> {
             task.setDeadline(updatedTask.getDeadline());
@@ -110,9 +111,8 @@ public class TaskService {
     }
 
     @CacheEvict(value = "tasks", allEntries = true)
-    public Task createTask(Task task) {
-
-        return taskRepository.save(task);
+    public Task createTask(TaskRequest task) {
+        return taskRepository.save(mapToEntity(task));
     }
 
     @CacheEvict(value = "tasks", allEntries = true)
@@ -122,6 +122,16 @@ public class TaskService {
        taskRepository.deleteById(id);
 
        return task;
+    }
+
+    private Task mapToEntity(TaskRequest request) {
+        Task task = new Task();
+        task.setTitle(request.getTitle());
+        task.setDescription(request.getDescription());
+        task.setDeadline(request.getDeadline());
+        task.setPriority(request.getPriority());
+        task.setStatus(request.getStatus());
+        return task;
     }
 
 }
