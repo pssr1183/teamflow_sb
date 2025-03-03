@@ -66,7 +66,7 @@ public class TaskAssignmentService {
     public TaskAssignmentDTO updateAssignmentStatus(Long assignmentId, String status, User currentUser) {
 
         TaskAssignment taskAssignment = taskAssignmentRepository.findById(assignmentId).orElseThrow(()->
-                    new RuntimeException("Cannot Find the corresponding task assignment")
+                    new TaskAssignmentNotFoundException("Cannot Find the corresponding task assignment")
         );
         boolean canUpdateAnyTask = userService.canPerformAny(currentUser,"TASK_UPDATE_ALL");
         boolean isAssigned = taskAssignment.getUser().getId().equals(currentUser.getId());
