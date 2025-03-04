@@ -18,7 +18,6 @@ target/
 *.iws
 *.iml
 *.ipr
-.env
 
 ### NetBeans ###
 /nbproject/private/
@@ -36,3 +35,4 @@ build/
 # Application properties with sensitive data
 application.properties
 application.yml
+.env
