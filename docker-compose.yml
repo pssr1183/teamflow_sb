@@ -14,12 +14,12 @@ services:
       redis:
         condition: service_healthy
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/test_db_2
-      - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=Poorna@1210
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/${POSTGRES_DB}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
-      - SPRING_JPA_SHOW_SQL=true
-#      - SPRING_SQL_INIT_MODE=always
+#      - SPRING_JPA_SHOW_SQL=true
+      - SPRING_SQL_INIT_MODE=always
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_DATA_REDIS_PORT=6379
       - SPRING_DATA_CACHE_TYPE=redis
@@ -27,13 +27,14 @@ services:
   db:
     image: postgres:13
     environment:
-      - POSTGRES_DB=test_db_2
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=Poorna@1210
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     ports:
       - "5433:5432"
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
+    command: ["bash", "-c", "docker-entrypoint.sh postgres & sleep 5 && psql -U $POSTGRES_USER -tc 'SELECT 1 FROM pg_database WHERE datname = \"$POSTGRES_DB\"' | grep -q 1 || psql -U $POSTGRES_USER -c 'CREATE DATABASE \"$POSTGRES_DB\";' && wait"]
+#    volumes:
+#      - postgres-data:/var/lib/postgresql/data
     platform: linux/amd64
   redis:
     image: redis:latest
@@ -47,5 +48,5 @@ services:
       timeout: 3s
       retries: 5
     platform: linux/amd64
-volumes:
-  postgres-data:
+#volumes:
+#  postgres-data:
