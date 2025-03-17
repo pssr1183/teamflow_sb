@@ -2,10 +2,12 @@ package com.example.demo.service;
 
 import com.example.demo.dto.TaskAssignmentDTO;
 import com.example.demo.dtomapper.DTOMapper;
+import com.example.demo.entity.Notification;
 import com.example.demo.entity.Task;
 import com.example.demo.entity.TaskAssignment;
 import com.example.demo.entity.User;
 import com.example.demo.events.TaskAssignmentUpdatedEvent;
+import com.example.demo.events.TaskNotificationEvent;
 import com.example.demo.exceptions.AccessDeniedException;
 import com.example.demo.exceptions.TaskAssignmentNotFoundException;
 import com.example.demo.exceptions.TaskNotFoundException;
@@ -52,6 +54,7 @@ public class TaskAssignmentService {
         taskAssignment.setAssignedDate(assignedDate);
         taskAssignment.setStatus(status);
         taskAssignment = taskAssignmentRepository.save(taskAssignment);
+        eventPublisher.publishEvent(new TaskNotificationEvent(this,taskId,userId, "A new task '" + task.getTitle() + "' has been assigned to you.",user.getUsername(), Notification.NotificationType.TASK_ASSIGNED));
         eventPublisher.publishEvent(new TaskAssignmentUpdatedEvent(this,taskAssignment.getId()));
 
         return taskAssignment;
