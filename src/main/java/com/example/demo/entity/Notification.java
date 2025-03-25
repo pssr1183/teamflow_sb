@@ -37,6 +37,7 @@ public class Notification {
     public enum NotificationType {
         TASK_ASSIGNED,
         TASK_UNASSIGNED,
-        USER_REGISTERED
+        USER_REGISTERED,
+        USER_RESET_PASSWORD
     }
 }

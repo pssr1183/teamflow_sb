@@ -1,16 +1,16 @@
 package com.example.demo.controller;
 
-import com.example.demo.dto.requests.UserLoginRequest;
-import com.example.demo.dto.requests.UserRegistrationRequest;
-import com.example.demo.dto.requests.UserRolesUpdateRequest;
+import com.example.demo.dto.requests.*;
 import com.example.demo.entity.Permission;
 import com.example.demo.entity.Role;
 import com.example.demo.entity.User;
 import com.example.demo.security.JWTUtil;
+import com.example.demo.service.RateLimiterService;
 import com.example.demo.service.RoleService;
 import com.example.demo.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -33,6 +33,9 @@ public class UserController {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private RateLimiterService rateLimiterService;
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody UserRegistrationRequest userRequest) {
@@ -63,6 +66,11 @@ public class UserController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody UserLoginRequest userLoginRequest) {
+        Boolean isRequestAllowed = rateLimiterService.isAllowed("login"+userLoginRequest.getUsername());
+        if(!isRequestAllowed) {
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body("Too many requests. Try again later.");
+        }
         User existingUser = userService.findByUsername(userLoginRequest.getUsername());
 
         if(existingUser == null) {
@@ -109,6 +117,31 @@ public class UserController {
         Map<String, Set<String>> rolePermissionsMap = userService.getCurrentUserRoles(user);
 
         return ResponseEntity.ok(rolePermissionsMap);
+    }
+
+    @PostMapping("/forget-password")
+    public ResponseEntity<?> forgetPassword(@RequestBody UserForgetPasswordRequest userForgetPasswordRequest) {
+        String email = userForgetPasswordRequest.getEmail();
+        Boolean isRequestAllowed = rateLimiterService.isAllowed(email);
+        if(!isRequestAllowed) {
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body("Too many requests. Try again later.");
+        }
+        userService.forgetPassword(email);
+        return ResponseEntity.ok("An email has been sent to your email to reset the password");
+
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestBody UserResetPasswordRequest userResetPasswordRequest) {
+        userService.resetPassword(userResetPasswordRequest.getToken(), userResetPasswordRequest.getPassword());
+        return ResponseEntity.ok("Password has been reset successfully");
+
+    }
+    @GetMapping("/reset-password")
+    public ResponseEntity<?> getResetPassword(@RequestParam String token) {
+        return ResponseEntity.ok("Password has been reset successfully token: "+token);
+
     }
 
 //    @GetMapping("/permissions")

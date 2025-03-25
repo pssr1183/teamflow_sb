@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -25,6 +26,11 @@ public class User {
 
     @Column(nullable = false)
     private String password;
+
+    @Column(unique = true)
+    private String resetToken;
+
+    private LocalDateTime resetTokenExpiry;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(

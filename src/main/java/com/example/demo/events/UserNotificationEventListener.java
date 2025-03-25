@@ -29,7 +29,7 @@ public class UserNotificationEventListener {
 
     @Transactional
     @RabbitListener(queues = RabbitMQConfig.USER_QUEUE)
-    public void handleTaskNotification(UserNotification userNotification) {
+    public void handleUserNotification(UserNotification userNotification) {
 
         Notification notification = new Notification();
         notification.setMessage(userNotification.getMessage());
