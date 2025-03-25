@@ -22,7 +22,7 @@ public class SecurityConfiguration {
         http
                 .csrf(csrf -> csrf.disable()) // Disable CSRF protection (not recommended for production)
                 .authorizeHttpRequests(authz -> authz
-                        .requestMatchers("/api/auth/register","/api/auth/login").permitAll()
+                        .requestMatchers("/api/auth/register","/api/auth/login","/api/auth/forget-password","/api/auth/reset-password").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers("/api/tasks/**").authenticated()
                         .anyRequest().authenticated()          // Require authentication for other endpoints

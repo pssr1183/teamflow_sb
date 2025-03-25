@@ -53,4 +53,20 @@ public class EmailMessageBody {
                 "    </table>\n";
        return message;
     }
+    public String getPasswordResetBody(String displayName, String resetLink) {
+        return "<div style=\"font-family: Arial, sans-serif; line-height: 1.6; color: #333;\">\n" +
+                "    <h2 style=\"color: #007bff;\">Password Reset Request</h2>\n" +
+                "    <p>Hello <strong>" + displayName + "</strong>,</p>\n" +
+                "    <p>We received a request to reset your password. Click the button below to reset it:</p>\n" +
+                "    <p style=\"text-align: center;\">\n" +
+                "        <a href=\"" + resetLink + "\" style=\"display: inline-block; padding: 10px 20px; font-size: 16px; " +
+                "            color: #fff; background-color: #007bff; text-decoration: none; border-radius: 5px;\">\n" +
+                "            Reset Password\n" +
+                "        </a>\n" +
+                "    </p>\n" +
+                "    <p>If you didn't request a password reset, you can ignore this email. Your password will remain unchanged.</p>\n" +
+                "    <hr>\n" +
+                "    <p style=\"font-size: 12px; color: #777;\">This link will expire in 15 minutes. If you need help, please contact support.</p>\n" +
+                "</div>";
+    }
 }
