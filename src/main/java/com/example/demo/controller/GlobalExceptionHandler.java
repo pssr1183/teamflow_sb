@@ -74,8 +74,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(TokenExpiredException.class)
     public ResponseEntity<ApiResponse> handleTokenExpiredException(TokenExpiredException e, HttpServletRequest request) {
-        System.out.println("Caught");
         return buildErrorResponse(HttpStatus.REQUEST_TIMEOUT,e.getMessage(),request);
+    }
+
+    @ExceptionHandler(TaskAssignmentAlreadyExistsException.class)
+    public ResponseEntity<ApiResponse> TaskAssignmentAlreadyExistsException(TaskAssignmentAlreadyExistsException e, HttpServletRequest request) {
+        return buildErrorResponse(HttpStatus.BAD_REQUEST,e.getMessage(),request);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
