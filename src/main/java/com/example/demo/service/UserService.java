@@ -1,8 +1,7 @@
 package com.example.demo.service;
 
-import com.example.demo.entity.Permission;
-import com.example.demo.entity.Role;
-import com.example.demo.entity.User;
+import com.example.demo.config.messageConfig.EmailMessageBody;
+import com.example.demo.entity.*;
 import com.example.demo.exceptions.UserAlreadyExistsException;
 import com.example.demo.exceptions.UserNotFoundException;
 import com.example.demo.repository.RoleRepository;
@@ -27,6 +26,12 @@ public class UserService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private EmailMessageBody messageBody;
+
+    @Autowired
+    private NotificationService notificationService;
+
     public User register(String username, String displayName, String password, Set<Role> roles) {
         User user = new User();
         user.setUsername(username);
@@ -38,7 +43,11 @@ public class UserService {
             throw new UserAlreadyExistsException("Username already taken");
         }
 
-        return userRepository.save(user);
+        userRepository.save(user);
+        String message = messageBody.getUserRegistrationBody(username,password,displayName);
+        notificationService.sendEmailNotification(new UserNotification(displayName,message, username,password, Notification.NotificationType.USER_REGISTERED));
+
+        return user;
     }
 
     public User findByUsername(String username) {

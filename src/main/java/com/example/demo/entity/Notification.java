@@ -16,11 +16,17 @@ public class Notification {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(columnDefinition = "TEXT")
     private String message;
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User recipient;
+
+    @Enumerated(EnumType.STRING)
     private NotificationStatus status;
+
+    @Enumerated(EnumType.STRING)
     private NotificationType type;
     private LocalDateTime createdAt;
 
@@ -29,6 +35,8 @@ public class Notification {
     }
 
     public enum NotificationType {
-        TASK_ASSIGNED
+        TASK_ASSIGNED,
+        TASK_UNASSIGNED,
+        USER_REGISTERED
     }
 }
