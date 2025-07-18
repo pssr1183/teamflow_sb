@@ -30,6 +30,9 @@ public class User {
     @Column(unique = true)
     private String resetToken;
 
+    @Column(nullable = false)
+    private boolean isActive = true;
+
     private LocalDateTime resetTokenExpiry;
 
     @ManyToMany(fetch = FetchType.EAGER)

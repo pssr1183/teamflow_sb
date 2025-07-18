@@ -14,10 +14,6 @@ import java.util.Set;
 @Table(name = "permissions")
 
 public class Permission {
-    // Define constants
-    public static final String READ_PERMISSION = "READ";
-    public static final String WRITE_PERMISSION = "WRITE";
-    public static final String DELETE_PERMISSION = "DELETE";
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
