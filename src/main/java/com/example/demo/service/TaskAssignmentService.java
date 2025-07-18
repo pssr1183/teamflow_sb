@@ -51,6 +51,13 @@ public class TaskAssignmentService {
         Task task = taskRepository.findById(taskId).orElseThrow(() -> new TaskNotFoundException("Cannot find the task"));
         User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException("Cannot find the user"));
 
+        //this check is essentially to prevent assigning tasks to the deactivated users
+        //may be there can be a better approach which can be implemented in future
+        boolean isUserActive = userService.isUserActive(user);
+        if(!isUserActive) {
+            throw new UserDeactivatedException("User account is deactivated.");
+        }
+
         TaskAssignment existingTaskAssignment = taskAssignmentRepository.findByTaskAndUser(task,user).orElse(null);
         if(existingTaskAssignment != null) {
             throw new TaskAssignmentAlreadyExistsException("Task is already assigned to this user");

@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.exceptions.*;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -77,8 +78,32 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.REQUEST_TIMEOUT,e.getMessage(),request);
     }
 
+    @ExceptionHandler(JwtException.class)
+    public ResponseEntity<ApiResponse> handleJwtException(JwtException e, HttpServletRequest request) {
+        return buildErrorResponse(HttpStatus.BAD_REQUEST,"Invaild or expired JWT Token",request);
+    }
+
     @ExceptionHandler(TaskAssignmentAlreadyExistsException.class)
-    public ResponseEntity<ApiResponse> TaskAssignmentAlreadyExistsException(TaskAssignmentAlreadyExistsException e, HttpServletRequest request) {
+    public ResponseEntity<ApiResponse> handleTaskAssignmentAlreadyExistsException(TaskAssignmentAlreadyExistsException e, HttpServletRequest request) {
+        return buildErrorResponse(HttpStatus.BAD_REQUEST,e.getMessage(),request);
+    }
+
+    @ExceptionHandler(UserAlreadyDeactivatedException.class)
+    public ResponseEntity<ApiResponse> handleUserAlreadyDeactivatedException(UserAlreadyDeactivatedException e, HttpServletRequest request) {
+        return buildErrorResponse(HttpStatus.BAD_REQUEST,e.getMessage(),request);
+    }
+
+    @ExceptionHandler(UserAlreadyActivatedException.class)
+    public ResponseEntity<ApiResponse> handleUserAlreadyActivatedException(UserAlreadyActivatedException e, HttpServletRequest request) {
+        return buildErrorResponse(HttpStatus.BAD_REQUEST,e.getMessage(),request);
+    }
+    @ExceptionHandler(UserDeactivatedException.class)
+    public ResponseEntity<ApiResponse> handleUserDeactivatedException(UserDeactivatedException e, HttpServletRequest request) {
+        return buildErrorResponse(HttpStatus.FORBIDDEN,e.getMessage(),request);
+    }
+
+    @ExceptionHandler(EntityAlreadyExistsException.class)
+    public ResponseEntity<ApiResponse> handleEntityAlreadyExistsException(EntityAlreadyExistsException e, HttpServletRequest request) {
         return buildErrorResponse(HttpStatus.BAD_REQUEST,e.getMessage(),request);
     }
 

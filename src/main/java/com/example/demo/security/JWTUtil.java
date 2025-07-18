@@ -1,5 +1,7 @@
 package com.example.demo.security;
 
+import com.example.demo.exceptions.TokenExpiredException;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -31,15 +33,8 @@ public class JWTUtil {
     }
 
     //Validate the token
-    public boolean ValidateToken(String token) {
-        try {
+    public void ValidateToken(String token) throws JwtException {
             Jwts.parserBuilder().setSigningKey(getSignedKey()).build().parseClaimsJws(token);
-            return true;
-        }
-        catch (JwtException e) {
-            System.out.println("Token validation failed: " + e.getMessage());
-            return false;
-        }
     }
 
     // Username extraction

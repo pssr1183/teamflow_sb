@@ -3,6 +3,7 @@ package com.example.demo.service;
 import com.example.demo.dto.requests.RolePermissionRequest;
 import com.example.demo.entity.Permission;
 import com.example.demo.entity.Role;
+import com.example.demo.exceptions.EntityAlreadyExistsException;
 import com.example.demo.exceptions.PermissionNotFoundException;
 import com.example.demo.exceptions.RoleNotFoundException;
 import com.example.demo.repository.PermissionRepository;
@@ -124,5 +125,31 @@ public class RoleService {
 
     public Set<Role> findByNameIn(Set<String> roleNames) {
         return roleRepository.findByNameIn(roleNames);
+    }
+
+    public List<Role> addRole(String newRole) {
+
+        Role existingRole = roleRepository.findRoleByName(newRole).orElse(null);
+        if(existingRole != null) {
+            throw new  EntityAlreadyExistsException("The following role already exists");
+        }
+        Role role = new Role();
+        role.setName(newRole);
+        roleRepository.save(role);
+
+        return roleRepository.findAll();
+    }
+
+    public List<Role> getRoles() {
+        return roleRepository.findAll();
+    }
+
+
+    public void deleteRole(Long roleId) {
+        Role role = roleRepository.findById(roleId).orElseThrow(
+                () -> new RoleNotFoundException("Role Doesn't exist")
+        );
+
+        roleRepository.deleteById(roleId);
     }
 }

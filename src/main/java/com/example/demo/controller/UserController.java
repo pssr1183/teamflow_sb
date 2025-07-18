@@ -1,5 +1,6 @@
 package com.example.demo.controller;
 
+import com.example.demo.dto.UserDisplayDTO;
 import com.example.demo.dto.requests.*;
 import com.example.demo.entity.Permission;
 import com.example.demo.entity.Role;
@@ -76,6 +77,9 @@ public class UserController {
         if(existingUser == null) {
             return ResponseEntity.badRequest().body("User should register");
         }
+        if(!existingUser.isActive()) {
+            return ResponseEntity.badRequest().body("Your account has been deactivated");
+        }
 
         if(!passwordEncoder.matches(userLoginRequest.getPassword(),existingUser.getPassword())) {
             return ResponseEntity.badRequest().body("Invalid credentials");
@@ -141,6 +145,28 @@ public class UserController {
     @GetMapping("/reset-password")
     public ResponseEntity<?> getResetPassword(@RequestParam String token) {
         return ResponseEntity.ok("Password has been reset successfully token: "+token);
+
+    }
+
+    @PostMapping("/deactivate-user")
+    public ResponseEntity<?> deactivateUser(@RequestParam Long userId) {
+        userService.deactivateUser(userId);
+        return ResponseEntity.ok("User has been deactivated successfully");
+
+    }
+
+    @PostMapping("/activate-user")
+    public ResponseEntity<?> activateUser(@RequestParam Long userId) {
+        userService.activateUser(userId);
+        return ResponseEntity.ok("User has been reactivated successfully");
+
+    }
+
+    @GetMapping("/get-user-details")
+    public ResponseEntity<?> getUserDetails(Principal principal) {
+        User user = userService.findByUsername(principal.getName());
+        UserDisplayDTO userDisplayDTO = userService.getUserDetails(user);
+        return ResponseEntity.ok(userDisplayDTO);
 
     }
 

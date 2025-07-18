@@ -1,10 +1,9 @@
 package com.example.demo.service;
 
 import com.example.demo.config.messageConfig.EmailMessageBody;
+import com.example.demo.dto.UserDisplayDTO;
 import com.example.demo.entity.*;
-import com.example.demo.exceptions.TokenExpiredException;
-import com.example.demo.exceptions.UserAlreadyExistsException;
-import com.example.demo.exceptions.UserNotFoundException;
+import com.example.demo.exceptions.*;
 import com.example.demo.repository.RoleRepository;
 import com.example.demo.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -137,11 +136,40 @@ public class UserService {
         System.out.println(token+" "+password);
         User user = userRepository.findByResetToken(token).orElseThrow(()-> new TokenExpiredException("The Reset Password Token is invalid"));
         if(user.getResetTokenExpiry().isBefore(LocalDateTime.now())) {
-            throw new TokenExpiredException("Token expired");
+            throw new TokenExpiredException("Password Reset Token expired");
         }
         user.setPassword(passwordEncoder.encode(password));
         user.setResetToken(null);
         user.setResetTokenExpiry(null);
         userRepository.save(user);
+    }
+
+    public void deactivateUser(Long userId) {
+        User user = userRepository.findById(userId).orElseThrow(()-> new UserNotFoundException("The following user doesn't exists"));
+        if(!user.isActive()) throw new UserAlreadyDeactivatedException("User is already deactivated");
+        user.setActive(false);
+        userRepository.save(user);
+    }
+
+    public void activateUser(Long userId) {
+        User user = userRepository.findById(userId).orElseThrow(()-> new UserNotFoundException("The following user doesn't exists"));
+        if(user.isActive()) throw new UserAlreadyActivatedException("User is already active");
+        user.setActive(true);
+        userRepository.save(user);
+    }
+
+    public boolean isUserActive(User user) {
+        if(!user.isActive()) {
+           return false;
+        }
+        return true;
+    }
+
+    public UserDisplayDTO getUserDetails(User user) {
+        UserDisplayDTO userDisplayDTO = new UserDisplayDTO();
+        userDisplayDTO.setDisplayName(user.getDisplayName());
+        userDisplayDTO.setUsername(user.getUsername());
+        userDisplayDTO.setRolenames(user.getRoles().stream().map(Role::getName).collect(Collectors.toSet()));
+        return userDisplayDTO;
     }
 }
